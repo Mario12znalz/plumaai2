@@ -33,30 +33,30 @@ export function useSubscription() {
 const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'basic',
-    name: 'Cydonia Basic',
-    price: 25,
-    messages: 400,
-    model: 'Cydonia 22B',
-    context: '8K Context',
-    features: ['400 messages/day', '8K context window', 'Basic support', 'All AI features']
-  },
-  {
-    id: 'premium',
-    name: 'Cydonia Premium',
-    price: 35,
+    name: 'Basic',
+    price: 10,
     messages: 600,
     model: 'Cydonia 22B',
     context: '8K Context',
-    features: ['600 messages/day', '8K context window', 'Priority support', 'All AI features', 'Advanced exports']
+    features: ['600 messages/day', '8K context window', 'Basic support', 'All AI features']
+  },
+  {
+    id: 'standard',
+    name: 'Standard',
+    price: 18,
+    messages: 800,
+    model: 'Cydonia 22B',
+    context: '8K Context',
+    features: ['800 messages/day', '8K context window', 'Priority support', 'All AI features', 'Advanced exports']
   },
   {
     id: 'pro',
-    name: 'Anubis Pro',
-    price: 60,
-    messages: 800,
-    model: 'Anubis 70B',
+    name: 'Pro',
+    price: 25,
+    messages: 1000,
+    model: 'Cydonia 22B',
     context: '16K Context',
-    features: ['800 messages/day', '16K context window', 'Premium support', 'All AI features', 'Advanced exports', 'Custom models']
+    features: ['1000 messages/day', '16K context window', 'Premium support', 'All AI features', 'Advanced exports', 'Custom models']
   }
 ];
 

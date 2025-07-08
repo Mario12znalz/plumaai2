@@ -35,7 +35,7 @@ export default function Subscription() {
 
   const getPlanColor = (planId: string) => {
     if (planId === 'pro') return 'from-yellow-500 to-orange-500';
-    if (planId === 'premium') return 'from-purple-500 to-blue-500';
+    if (planId === 'standard') return 'from-purple-500 to-blue-500';
     return 'from-gray-500 to-gray-600';
   };
 
@@ -77,7 +77,7 @@ export default function Subscription() {
           {plans.map((plan) => {
             const Icon = getPlanIcon(plan.id);
             const isCurrentPlan = currentPlan?.id === plan.id;
-            const isPremiumPlan = plan.id === 'premium';
+            const isPremiumPlan = plan.id === 'standard';
             
             return (
               <div 
@@ -101,7 +101,7 @@ export default function Subscription() {
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
                     <div className="text-4xl font-bold text-gray-900 mt-2">
-                      €{plan.price}
+                      ${plan.price}
                       <span className="text-lg text-gray-500 font-normal">/month</span>
                     </div>
                   </div>
@@ -133,7 +133,7 @@ export default function Subscription() {
                         onClick={() => handleUpgrade(plan.id)}
                         disabled={isProcessing}
                         className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                          isPremiumPlan
+                          plan.id === 'standard'
                             ? 'bg-purple-600 text-white hover:bg-purple-700'
                             : 'bg-gray-900 text-white hover:bg-gray-800'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -172,7 +172,7 @@ export default function Subscription() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">What's the difference between Cydonia and Anubis?</h3>
               <p className="text-gray-600 text-sm">
-                Cydonia 22B is our efficient model perfect for most writing tasks. Anubis 70B is our most powerful model with enhanced creativity and longer context understanding.
+                All plans use our powerful Cydonia 22B model. Higher tiers offer more daily messages and enhanced context windows for longer conversations.
               </p>
             </div>
             

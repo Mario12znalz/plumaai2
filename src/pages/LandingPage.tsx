@@ -123,11 +123,11 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Cydonia Basic</h3>
-                <div className="text-3xl font-bold text-purple-600 mb-4">€25<span className="text-lg text-gray-500">/month</span></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Basic</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-4">$10<span className="text-lg text-gray-500">/month</span></div>
                 <p className="text-gray-600 mb-6">Perfect for getting started</p>
                 <ul className="space-y-2 text-sm text-gray-600 mb-8">
-                  <li>• 400 messages per day</li>
+                  <li>• 600 messages per day</li>
                   <li>• Cydonia 22B model</li>
                   <li>• 8K context window</li>
                   <li>• All AI features</li>
@@ -145,11 +145,11 @@ export default function LandingPage() {
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Cydonia Premium</h3>
-                <div className="text-3xl font-bold text-purple-600 mb-4">€35<span className="text-lg text-gray-500">/month</span></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Standard</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-4">$18<span className="text-lg text-gray-500">/month</span></div>
                 <p className="text-gray-600 mb-6">For serious writers</p>
                 <ul className="space-y-2 text-sm text-gray-600 mb-8">
-                  <li>• 600 messages per day</li>
+                  <li>• 800 messages per day</li>
                   <li>• Cydonia 22B model</li>
                   <li>• 8K context window</li>
                   <li>• Priority support</li>
@@ -163,12 +163,12 @@ export default function LandingPage() {
 
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Anubis Pro</h3>
-                <div className="text-3xl font-bold text-purple-600 mb-4">€60<span className="text-lg text-gray-500">/month</span></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Pro</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-4">$25<span className="text-lg text-gray-500">/month</span></div>
                 <p className="text-gray-600 mb-6">Maximum power</p>
                 <ul className="space-y-2 text-sm text-gray-600 mb-8">
-                  <li>• 800 messages per day</li>
-                  <li>• Anubis 70B model</li>
+                  <li>• 1000 messages per day</li>
+                  <li>• Cydonia 22B model</li>
                   <li>• 16K context window</li>
                   <li>• Premium support</li>
                   <li>• Custom models</li>

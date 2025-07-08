@@ -18,7 +18,6 @@ interface WritingSettings {
   maxTokens: number;
   genre: string;
   messageSize: 'short' | 'medium' | 'long' | 'very-long';
-  messageSize: 'short' | 'medium' | 'long' | 'very-long';
 }
 
 interface CustomStyle {
@@ -55,7 +54,6 @@ export default function AIWriter() {
     maxTokens: 150,
     genre: 'fantasy',
     messageSize: 'medium'
-    messageSize: 'medium'
   });
 
   const [customStyles, setCustomStyles] = useState<CustomStyle[]>([]);
@@ -73,7 +71,6 @@ export default function AIWriter() {
     characteristics: ''
   });
 
-  // Load custom styles and genres from localStorage
   useEffect(() => {
     const savedStyles = localStorage.getItem('plumaai_custom_styles');
     const savedGenres = localStorage.getItem('plumaai_custom_genres');
@@ -86,7 +83,6 @@ export default function AIWriter() {
     }
   }, []);
 
-  // Save custom styles and genres to localStorage
   useEffect(() => {
     localStorage.setItem('plumaai_custom_styles', JSON.stringify(customStyles));
   }, [customStyles]);
@@ -131,17 +127,14 @@ export default function AIWriter() {
   ];
 
   const cleanIncompletePhrase = (text: string): string => {
-    // Remove incomplete sentences at the end
     const sentences = text.split(/[.!?]+/);
     if (sentences.length > 1) {
-      // Keep all complete sentences (those that end with punctuation)
       const completeSentences = sentences.slice(0, -1);
       if (completeSentences.length > 0) {
         return completeSentences.join('.') + '.';
       }
     }
     
-    // If no complete sentences, try to find complete phrases
     const phrases = text.split(/[,;:]+/);
     if (phrases.length > 1) {
       const completePhases = phrases.slice(0, -1);
@@ -150,39 +143,9 @@ export default function AIWriter() {
       }
     }
     
-    // Return original text if no good breaking point found
     return text;
   };
-  const messageSizeOptions = [
-    { value: 'short', label: 'Short', tokens: 50, description: '1-2 sentences' },
-    { value: 'medium', label: 'Medium', tokens: 100, description: '1 paragraph' },
-    { value: 'long', label: 'Long', tokens: 200, description: '2-3 paragraphs' },
-    { value: 'very-long', label: 'Very Long', tokens: 300, description: '3-4 paragraphs' }
-  ];
 
-  const cleanIncompletePhrase = (text: string): string => {
-    // Remove incomplete sentences at the end
-    const sentences = text.split(/[.!?]+/);
-    if (sentences.length > 1) {
-      // Keep all complete sentences (those that end with punctuation)
-      const completeSentences = sentences.slice(0, -1);
-      if (completeSentences.length > 0) {
-        return completeSentences.join('.') + '.';
-      }
-    }
-    
-    // If no complete sentences, try to find complete phrases
-    const phrases = text.split(/[,;:]+/);
-    if (phrases.length > 1) {
-      const completePhases = phrases.slice(0, -1);
-      if (completePhases.length > 0) {
-        return completePhases.join(',') + '.';
-      }
-    }
-    
-    // Return original text if no good breaking point found
-    return text;
-  };
   const handleCreateStyle = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -276,10 +239,6 @@ export default function AIWriter() {
       const selectedMessageSize = messageSizeOptions.find(size => size.value === settings.messageSize);
       const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
       
-      const selectedMessageSize = messageSizeOptions.find(size => size.value === settings.messageSize);
-      const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
-      
-      // Get custom style prompt if applicable
       const customStyle = customStyles.find(s => s.id === settings.style);
       const customGenre = customGenres.find(g => g.name.toLowerCase() === settings.genre);
       
@@ -293,7 +252,6 @@ export default function AIWriter() {
         prompt = `Genre: ${customGenre.name} (${customGenre.characteristics}). Style: ${settings.style}. Continue this text: ${inputText}`;
       }
 
-      // Simulate API call to Fearthless
       const response = await fetch('https://api.fearthless.ai/v1/completions', {
         method: 'POST',
         headers: {
@@ -307,7 +265,6 @@ export default function AIWriter() {
           temperature: settings.temperature
         })
       }).catch(() => {
-        // Fallback to mock response for demo
         return {
           ok: true,
           json: () => Promise.resolve({
@@ -322,10 +279,6 @@ export default function AIWriter() {
         const data = await response.json();
         let predictedText = data.choices?.[0]?.text || generateMockPrediction(inputText, { ...settings, maxTokens });
         
-        // Clean incomplete phrases
-        predictedText = cleanIncompletePhrase(predictedText);
-        
-        // Clean incomplete phrases
         predictedText = cleanIncompletePhrase(predictedText);
         
         setPrediction(predictedText);
@@ -351,12 +304,6 @@ export default function AIWriter() {
       const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
       let mockPrediction = generateMockPrediction(inputText, { ...settings, maxTokens });
       
-      // Clean incomplete phrases
-      mockPrediction = cleanIncompletePhrase(mockPrediction);
-      const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
-      let mockPrediction = generateMockPrediction(inputText, { ...settings, maxTokens });
-      
-      // Clean incomplete phrases
       mockPrediction = cleanIncompletePhrase(mockPrediction);
       setPrediction(mockPrediction);
       
@@ -411,7 +358,6 @@ export default function AIWriter() {
       ]
     };
 
-    // Check if it's a custom style
     const customStyle = customStyles.find(s => s.id === settings.style);
     if (customStyle) {
       return " " + customStyle.prompt.split('.')[0] + " continued with creative flair...";
@@ -420,16 +366,12 @@ export default function AIWriter() {
     const styleOptions = predictions[settings.style as keyof typeof predictions] || predictions.creative;
     let result = styleOptions[Math.floor(Math.random() * styleOptions.length)];
     
-    // Adjust length based on message size
     if (settings.maxTokens <= 50) {
-      // Short: return first sentence only
       const firstSentence = result.split(/[.!?]/)[0];
       result = firstSentence + '.';
     } else if (settings.maxTokens <= 100) {
-      // Medium: return as is (already one sentence/paragraph)
       result = result;
     } else if (settings.maxTokens <= 200) {
-      // Long: add another sentence
       const additionalSentences = [
         " The weight of destiny pressed upon her shoulders as she contemplated the path ahead.",
         " Each step forward brought new challenges and unexpected revelations.",
@@ -437,35 +379,6 @@ export default function AIWriter() {
       ];
       result += additionalSentences[Math.floor(Math.random() * additionalSentences.length)];
     } else {
-      // Very Long: add multiple sentences
-      const additionalContent = [
-        " The weight of destiny pressed upon her shoulders as she contemplated the path ahead. Each step forward brought new challenges and unexpected revelations. The world around her seemed to hold its breath, waiting for her next move.",
-        " Time stretched like molten glass, each moment crystallizing into memory. The choices she made now would ripple through eternity, affecting countless lives yet to be born. She understood the magnitude of her responsibility.",
-        " The ancient prophecies spoke of this moment, though their words had seemed like mere legend until now. Reality and myth converged in ways that defied comprehension, reshaping everything she thought she knew about the world."
-      ];
-      result += additionalContent[Math.floor(Math.random() * additionalContent.length)];
-    }
-    
-    return result;
-    
-    // Adjust length based on message size
-    if (settings.maxTokens <= 50) {
-      // Short: return first sentence only
-      const firstSentence = result.split(/[.!?]/)[0];
-      result = firstSentence + '.';
-    } else if (settings.maxTokens <= 100) {
-      // Medium: return as is (already one sentence/paragraph)
-      result = result;
-    } else if (settings.maxTokens <= 200) {
-      // Long: add another sentence
-      const additionalSentences = [
-        " The weight of destiny pressed upon her shoulders as she contemplated the path ahead.",
-        " Each step forward brought new challenges and unexpected revelations.",
-        " The world around her seemed to hold its breath, waiting for her next move."
-      ];
-      result += additionalSentences[Math.floor(Math.random() * additionalSentences.length)];
-    } else {
-      // Very Long: add multiple sentences
       const additionalContent = [
         " The weight of destiny pressed upon her shoulders as she contemplated the path ahead. Each step forward brought new challenges and unexpected revelations. The world around her seemed to hold its breath, waiting for her next move.",
         " Time stretched like molten glass, each moment crystallizing into memory. The choices she made now would ripple through eternity, affecting countless lives yet to be born. She understood the magnitude of her responsibility.",
@@ -511,7 +424,6 @@ export default function AIWriter() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">AI Writer</h1>
           <p className="text-gray-600">Let AI inspire your next masterpiece</p>
@@ -528,7 +440,6 @@ export default function AIWriter() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Settings Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-8">
               <div className="flex items-center justify-between mb-6">
@@ -575,7 +486,6 @@ export default function AIWriter() {
                     {allStyles.find(s => s.value === settings.style)?.description}
                   </p>
 
-                  {/* Custom Styles Management */}
                   {customStyles.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {customStyles.map((style) => (
@@ -636,7 +546,6 @@ export default function AIWriter() {
                     )}
                   </select>
 
-                  {/* Custom Genres Management */}
                   {customGenres.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {customGenres.map((genre) => (
@@ -691,14 +600,11 @@ export default function AIWriter() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                   >
                     {messageSizeOptions.map((option) => (
-                    {messageSizeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label} ({option.description})
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                  <p className="text-xs text-gray-500 mt-1">
                 </div>
 
                 <button
@@ -712,10 +618,8 @@ export default function AIWriter() {
             </div>
           </div>
 
-          {/* Main Writing Area */}
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              {/* Toolbar */}
               <div className="border-b border-gray-200 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -736,7 +640,6 @@ export default function AIWriter() {
                 </div>
               </div>
 
-              {/* Writing Area */}
               <div className="p-6">
                 <textarea
                   value={inputText}
@@ -746,7 +649,6 @@ export default function AIWriter() {
                   style={{ fontFamily: 'Georgia, serif', fontSize: '16px', lineHeight: '1.6' }}
                 />
 
-                {/* AI Prediction Display */}
                 {prediction && (
                   <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -783,7 +685,6 @@ export default function AIWriter() {
                   </div>
                 )}
 
-                {/* What Will Happen Next Section */}
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center space-x-2 mb-3">
                     <Lightbulb className="h-4 w-4 text-blue-600" />
@@ -821,7 +722,6 @@ export default function AIWriter() {
                   </div>
                 </div>
 
-                {/* Generate Button */}
                 <div className="mt-4 flex justify-center">
                   <button
                     onClick={handlePredict}
@@ -839,7 +739,6 @@ export default function AIWriter() {
               </div>
             </div>
 
-            {/* History Panel */}
             {showHistory && (
               <div className="mt-6 bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Writing History</h3>
@@ -885,7 +784,6 @@ export default function AIWriter() {
           </div>
         </div>
 
-        {/* Custom Style Form Modal */}
         {showCustomStyleForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl max-w-md w-full">
@@ -961,7 +859,6 @@ export default function AIWriter() {
           </div>
         )}
 
-        {/* Custom Genre Form Modal */}
         {showCustomGenreForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl max-w-md w-full">

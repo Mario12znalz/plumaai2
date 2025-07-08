@@ -17,6 +17,7 @@ interface WritingSettings {
   temperature: number;
   maxTokens: number;
   genre: string;
+  messageSize: 'short' | 'medium' | 'long' | 'very-long';
 }
 
 interface CustomStyle {
@@ -51,7 +52,8 @@ export default function AIWriter() {
     style: 'creative',
     temperature: 0.7,
     maxTokens: 150,
-    genre: 'fantasy'
+    genre: 'fantasy',
+    messageSize: 'medium'
   });
 
   const [customStyles, setCustomStyles] = useState<CustomStyle[]>([]);
@@ -119,6 +121,36 @@ export default function AIWriter() {
     ...customGenres.map(genre => genre.name)
   ];
 
+  const messageSizeOptions = [
+    { value: 'short', label: 'Short', tokens: 50, description: '1-2 sentences' },
+    { value: 'medium', label: 'Medium', tokens: 100, description: '1 paragraph' },
+    { value: 'long', label: 'Long', tokens: 200, description: '2-3 paragraphs' },
+    { value: 'very-long', label: 'Very Long', tokens: 300, description: '3-4 paragraphs' }
+  ];
+
+  const cleanIncompletePhrase = (text: string): string => {
+    // Remove incomplete sentences at the end
+    const sentences = text.split(/[.!?]+/);
+    if (sentences.length > 1) {
+      // Keep all complete sentences (those that end with punctuation)
+      const completeSentences = sentences.slice(0, -1);
+      if (completeSentences.length > 0) {
+        return completeSentences.join('.') + '.';
+      }
+    }
+    
+    // If no complete sentences, try to find complete phrases
+    const phrases = text.split(/[,;:]+/);
+    if (phrases.length > 1) {
+      const completePhases = phrases.slice(0, -1);
+      if (completePhases.length > 0) {
+        return completePhases.join(',') + '.';
+      }
+    }
+    
+    // Return original text if no good breaking point found
+    return text;
+  };
   const handleCreateStyle = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -209,6 +241,9 @@ export default function AIWriter() {
     setLoading(true);
 
     try {
+      const selectedMessageSize = messageSizeOptions.find(size => size.value === settings.messageSize);
+      const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
+      
       // Get custom style prompt if applicable
       const customStyle = customStyles.find(s => s.id === settings.style);
       const customGenre = customGenres.find(g => g.name.toLowerCase() === settings.genre);
@@ -233,7 +268,7 @@ export default function AIWriter() {
         body: JSON.stringify({
           model: currentPlan?.model.toLowerCase().replace(' ', '-') || 'cydonia-22b',
           prompt: prompt,
-          max_tokens: settings.maxTokens,
+          max_tokens: maxTokens,
           temperature: settings.temperature
         })
       }).catch(() => {
@@ -242,7 +277,7 @@ export default function AIWriter() {
           ok: true,
           json: () => Promise.resolve({
             choices: [{
-              text: generateMockPrediction(inputText, settings)
+              text: generateMockPrediction(inputText, { ...settings, maxTokens })
             }]
           })
         };
@@ -250,7 +285,10 @@ export default function AIWriter() {
 
       if (response.ok) {
         const data = await response.json();
-        const predictedText = data.choices?.[0]?.text || generateMockPrediction(inputText, settings);
+        let predictedText = data.choices?.[0]?.text || generateMockPrediction(inputText, { ...settings, maxTokens });
+        
+        // Clean incomplete phrases
+        predictedText = cleanIncompletePhrase(predictedText);
         
         setPrediction(predictedText);
         
@@ -260,7 +298,7 @@ export default function AIWriter() {
           prediction: predictedText,
           timestamp: new Date().toISOString(),
           model: currentPlan?.model || 'Cydonia 22B',
-          settings: { ...settings },
+          settings: { ...settings, maxTokens },
           userPrediction: userPrediction || undefined
         };
         
@@ -271,7 +309,12 @@ export default function AIWriter() {
       }
     } catch (error) {
       console.error('Prediction error:', error);
-      const mockPrediction = generateMockPrediction(inputText, settings);
+      const selectedMessageSize = messageSizeOptions.find(size => size.value === settings.messageSize);
+      const maxTokens = selectedMessageSize?.tokens || settings.maxTokens;
+      let mockPrediction = generateMockPrediction(inputText, { ...settings, maxTokens });
+      
+      // Clean incomplete phrases
+      mockPrediction = cleanIncompletePhrase(mockPrediction);
       setPrediction(mockPrediction);
       
       const newPrediction: Prediction = {
@@ -280,7 +323,7 @@ export default function AIWriter() {
         prediction: mockPrediction,
         timestamp: new Date().toISOString(),
         model: currentPlan?.model || 'Cydonia 22B',
-        settings: { ...settings },
+        settings: { ...settings, maxTokens },
         userPrediction: userPrediction || undefined
       };
       
@@ -291,7 +334,7 @@ export default function AIWriter() {
     }
   };
 
-  const generateMockPrediction = (input: string, settings: WritingSettings): string => {
+  const generateMockPrediction = (input: string, settings: WritingSettings & { maxTokens: number }): string => {
     const predictions = {
       creative: [
         " The ancient magic stirred within her veins, responding to the whispered incantation. Shadows danced at the edges of her vision as reality began to bend and shift around her fingertips.",
@@ -332,7 +375,35 @@ export default function AIWriter() {
     }
 
     const styleOptions = predictions[settings.style as keyof typeof predictions] || predictions.creative;
-    return styleOptions[Math.floor(Math.random() * styleOptions.length)];
+    let result = styleOptions[Math.floor(Math.random() * styleOptions.length)];
+    
+    // Adjust length based on message size
+    if (settings.maxTokens <= 50) {
+      // Short: return first sentence only
+      const firstSentence = result.split(/[.!?]/)[0];
+      result = firstSentence + '.';
+    } else if (settings.maxTokens <= 100) {
+      // Medium: return as is (already one sentence/paragraph)
+      result = result;
+    } else if (settings.maxTokens <= 200) {
+      // Long: add another sentence
+      const additionalSentences = [
+        " The weight of destiny pressed upon her shoulders as she contemplated the path ahead.",
+        " Each step forward brought new challenges and unexpected revelations.",
+        " The world around her seemed to hold its breath, waiting for her next move."
+      ];
+      result += additionalSentences[Math.floor(Math.random() * additionalSentences.length)];
+    } else {
+      // Very Long: add multiple sentences
+      const additionalContent = [
+        " The weight of destiny pressed upon her shoulders as she contemplated the path ahead. Each step forward brought new challenges and unexpected revelations. The world around her seemed to hold its breath, waiting for her next move.",
+        " Time stretched like molten glass, each moment crystallizing into memory. The choices she made now would ripple through eternity, affecting countless lives yet to be born. She understood the magnitude of her responsibility.",
+        " The ancient prophecies spoke of this moment, though their words had seemed like mere legend until now. Reality and myth converged in ways that defied comprehension, reshaping everything she thought she knew about the world."
+      ];
+      result += additionalContent[Math.floor(Math.random() * additionalContent.length)];
+    }
+    
+    return result;
   };
 
   const insertPrediction = () => {
@@ -541,18 +612,20 @@ export default function AIWriter() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Response Length
+                    Message Size
                   </label>
                   <select
-                    value={settings.maxTokens}
-                    onChange={(e) => setSettings(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
+                    value={settings.messageSize}
+                    onChange={(e) => setSettings(prev => ({ ...prev, messageSize: e.target.value as WritingSettings['messageSize'] }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                   >
-                    <option value={50}>Short (50 tokens)</option>
-                    <option value={100}>Medium (100 tokens)</option>
-                    <option value={150}>Long (150 tokens)</option>
-                    <option value={200}>Very Long (200 tokens)</option>
+                    {messageSizeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} ({option.description})
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
                 </div>
 
                 <button

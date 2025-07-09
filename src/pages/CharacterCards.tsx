@@ -220,16 +220,261 @@ export default function CharacterCards() {
   const importCharacters = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.type === 'application/json') {
+        // Handle JSON files
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedCharacters = JSON.parse(e.target?.result as string);
+            setCharacters(prev => [...prev, ...importedCharacters]);
+          } catch (error) {
+            alert('Error importing JSON characters. Please check the file format.');
+          }
+        };
+        reader.readAsText(file);
+      } else if (file.type.startsWith('image/')) {
+        // Handle PNG character cards
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const img = new Image();
+            img.onload = () => {
+              // Create canvas to read image data
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                
+                // Try to extract text from image using OCR-like approach
+                // For now, we'll create a character based on filename and prompt user
+                const fileName = file.name.replace(/\.[^/.]+$/, "");
+                const character: Character = {
+                  id: Date.now().toString(),
+                  name: fileName || 'Imported Character',
+                  description: 'Character imported from PNG card. Please edit to add details.',
+                  appearance: 'Please add appearance details from the character card.',
+                  personality: 'Please add personality details from the character card.',
+                  backstory: 'Please add backstory details from the character card.',
+                  image: e.target?.result as string,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setCharacters(prev => [...prev, character]);
+                alert(`Character "${character.name}" imported from PNG. Please edit to add the details from your character card.`);
+              }
+            };
+            img.src = e.target?.result as string;
+          } catch (error) {
+            alert('Error importing PNG character card. Please try again.');
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select a JSON file or PNG character card.');
+      }
+    }
+  };
+
+  // Add function to parse character card text format
+  const parseCharacterCardText = (text: string): Partial<Character> => {
+    const lines = text.split('\n');
+    const character: Partial<Character> = {};
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('Name:')) {
+        character.name = trimmed.replace('Name:', '').trim();
+      } else if (trimmed.startsWith('Description:')) {
+        character.description = trimmed.replace('Description:', '').trim();
+      } else if (trimmed.startsWith('Personality:')) {
+        character.personality = trimmed.replace('Personality:', '').trim();
+      } else if (trimmed.startsWith('Appearance:')) {
+        character.appearance = trimmed.replace('Appearance:', '').trim();
+      } else if (trimmed.startsWith('Backstory:') || trimmed.startsWith('Summary:')) {
+        character.backstory = trimmed.replace(/^(Backstory:|Summary:)/, '').trim();
+      }
+    }
+    
+    return character;
+  };
+
+  // Enhanced import with text parsing
+  const importCharacterWithTextParsing = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type === 'application/json') {
+        // Handle JSON files
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedCharacters = JSON.parse(e.target?.result as string);
+            setCharacters(prev => [...prev, ...importedCharacters]);
+          } catch (error) {
+            alert('Error importing JSON characters. Please check the file format.');
+          }
+        };
+        reader.readAsText(file);
+      } else if (file.type.startsWith('image/')) {
+        // Handle PNG character cards with text extraction
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              
+              // Create character with image and prompt for manual entry
+              const fileName = file.name.replace(/\.[^/.]+$/, "");
+              
+              // Show modal for manual character data entry
+              const characterData = prompt(`Please enter character data for "${fileName}" in this format:
+Name: Character Name
+Description: Brief description
+Personality: Character personality
+Appearance: Physical appearance
+Backstory: Character background
+
+Paste the character card text here:`);
+              
+              if (characterData) {
+                const parsedData = parseCharacterCardText(characterData);
+                const character: Character = {
+                  id: Date.now().toString(),
+                  name: parsedData.name || fileName || 'Imported Character',
+                  description: parsedData.description || 'Please add description',
+                  appearance: parsedData.appearance || 'Please add appearance',
+                  personality: parsedData.personality || 'Please add personality',
+                  backstory: parsedData.backstory || 'Please add backstory',
+                  image: e.target?.result as string,
+                  createdAt: new Date().toISOString()
+                };
+                
+                setCharacters(prev => [...prev, character]);
+                alert(`Character "${character.name}" imported successfully!`);
+              }
+            }
+          };
+          img.src = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select a JSON file or PNG character card.');
+      }
+    }
+  };
+
+  // Add advanced PNG parsing for embedded JSON
+  const parseEmbeddedCharacterData = async (file: File): Promise<Character | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          // Look for JSON data in PNG chunks or metadata
+          const text = new TextDecoder().decode(uint8Array);
+          
+          // Try to find JSON-like patterns
+          const jsonMatch = text.match(/\{[^{}]*"name"[^{}]*\}/g);
+          if (jsonMatch) {
+            try {
+              const characterData = JSON.parse(jsonMatch[0]);
+              const character: Character = {
+                id: Date.now().toString(),
+                name: characterData.name || 'Imported Character',
+                description: characterData.description || characterData.desc || 'Imported character',
+                appearance: characterData.appearance || characterData.looks || 'Please add appearance',
+                personality: characterData.personality || characterData.persona || 'Please add personality',
+                backstory: characterData.backstory || characterData.background || 'Please add backstory',
+                createdAt: new Date().toISOString()
+              };
+              resolve(character);
+              return;
+            } catch (parseError) {
+              // Continue to manual parsing
+            }
+          }
+          
+          resolve(null);
+        } catch (error) {
+          resolve(null);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Updated import function with better PNG support
+  const handleImportCharacters = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type === 'application/json') {
+      // Handle JSON files
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const importedCharacters = JSON.parse(e.target?.result as string);
-          setCharacters(prev => [...prev, ...importedCharacters]);
+          if (Array.isArray(importedCharacters)) {
+            setCharacters(prev => [...prev, ...importedCharacters]);
+          } else {
+            setCharacters(prev => [...prev, importedCharacters]);
+          }
+          alert('Characters imported successfully!');
         } catch (error) {
-          alert('Error importing characters. Please check the file format.');
+          alert('Error importing JSON characters. Please check the file format.');
         }
       };
       reader.readAsText(file);
+    } else if (file.type.startsWith('image/')) {
+      // Try to parse embedded character data first
+      const embeddedCharacter = await parseEmbeddedCharacterData(file);
+      
+      if (embeddedCharacter) {
+        setCharacters(prev => [...prev, embeddedCharacter]);
+        alert(`Character "${embeddedCharacter.name}" imported from PNG!`);
+      } else {
+        // Fallback to manual entry with image preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const fileName = file.name.replace(/\.[^/.]+$/, "");
+          
+          // Create a more user-friendly input dialog
+          const characterName = prompt('Character Name:', fileName) || fileName;
+          const description = prompt('Description:', '') || 'Imported character';
+          const personality = prompt('Personality:', '') || 'Please add personality';
+          const appearance = prompt('Appearance:', '') || 'Please add appearance';
+          const backstory = prompt('Backstory:', '') || 'Please add backstory';
+          
+          if (characterName) {
+            const character: Character = {
+              id: Date.now().toString(),
+              name: characterName,
+              description,
+              appearance,
+              personality,
+              backstory,
+              image: e.target?.result as string,
+              createdAt: new Date().toISOString()
+            };
+            
+            setCharacters(prev => [...prev, character]);
+            alert(`Character "${character.name}" imported successfully!`);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      alert('Please select a JSON file or PNG character card.');
     }
   };
 
@@ -247,8 +492,8 @@ export default function CharacterCards() {
               Import
               <input
                 type="file"
-                accept=".json"
-                onChange={importCharacters}
+                accept=".json,.png,.jpg,.jpeg"
+                onChange={handleImportCharacters}
                 className="hidden"
               />
             </label>

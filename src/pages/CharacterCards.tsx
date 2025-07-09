@@ -1,16 +1,46 @@
 import React, { useState } from 'react';
-import { Users, Plus, Download, Upload, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Users, Plus, Download, Upload, Edit, Trash2, Image as ImageIcon, Info } from 'lucide-react';
 import { useSubscription } from '../contexts/SubscriptionContext';
 
 interface Character {
   id: string;
   name: string;
   description: string;
-  appearance: string;
   personality: string;
-  backstory: string;
+  scenario: string;
+  first_mes: string;
+  mes_example: string;
+  creator_notes?: string;
+  system_prompt?: string;
+  post_history_instructions?: string;
+  alternate_greetings?: string[];
+  character_book?: any;
+  tags?: string[];
+  creator?: string;
+  character_version?: string;
   image?: string;
   createdAt: string;
+}
+
+interface CharacterCardV2 {
+  spec: string;
+  spec_version: string;
+  data: {
+    name: string;
+    description: string;
+    personality: string;
+    scenario: string;
+    first_mes: string;
+    mes_example: string;
+    creator_notes?: string;
+    system_prompt?: string;
+    post_history_instructions?: string;
+    alternate_greetings?: string[];
+    character_book?: any;
+    tags?: string[];
+    creator?: string;
+    character_version?: string;
+  };
 }
 
 export default function CharacterCards() {
@@ -21,9 +51,12 @@ export default function CharacterCards() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    appearance: '',
     personality: '',
-    backstory: '',
+    scenario: '',
+    first_mes: '',
+    mes_example: '',
+    creator_notes: '',
+    tags: '',
     image: ''
   });
 
@@ -36,7 +69,17 @@ export default function CharacterCards() {
 
     const character: Character = {
       id: editingId || Date.now().toString(),
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      personality: formData.personality,
+      scenario: formData.scenario,
+      first_mes: formData.first_mes,
+      mes_example: formData.mes_example,
+      creator_notes: formData.creator_notes,
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+      creator: 'PlumaAI User',
+      character_version: '1.0',
+      image: formData.image,
       createdAt: new Date().toISOString()
     };
 
@@ -51,9 +94,12 @@ export default function CharacterCards() {
     setFormData({
       name: '',
       description: '',
-      appearance: '',
       personality: '',
-      backstory: '',
+      scenario: '',
+      first_mes: '',
+      mes_example: '',
+      creator_notes: '',
+      tags: '',
       image: ''
     });
     setShowForm(false);
@@ -63,9 +109,12 @@ export default function CharacterCards() {
     setFormData({
       name: character.name,
       description: character.description,
-      appearance: character.appearance,
       personality: character.personality,
-      backstory: character.backstory,
+      scenario: character.scenario,
+      first_mes: character.first_mes,
+      mes_example: character.mes_example,
+      creator_notes: character.creator_notes || '',
+      tags: character.tags?.join(', ') || '',
       image: character.image || ''
     });
     setEditingId(character.id);
@@ -76,33 +125,61 @@ export default function CharacterCards() {
     setCharacters(prev => prev.filter(c => c.id !== id));
   };
 
-  const exportCharacter = (character: Character) => {
-    // Create a canvas to generate proper character card PNG
+  // Create proper character card PNG with embedded JSON
+  const exportCharacter = async (character: Character) => {
+    // Create the character card data in V2 format
+    const cardData: CharacterCardV2 = {
+      spec: 'chara_card_v2',
+      spec_version: '2.0',
+      data: {
+        name: character.name,
+        description: character.description,
+        personality: character.personality,
+        scenario: character.scenario,
+        first_mes: character.first_mes,
+        mes_example: character.mes_example,
+        creator_notes: character.creator_notes,
+        system_prompt: character.system_prompt,
+        post_history_instructions: character.post_history_instructions,
+        alternate_greetings: character.alternate_greetings,
+        character_book: character.character_book,
+        tags: character.tags,
+        creator: character.creator || 'PlumaAI',
+        character_version: character.character_version || '1.0'
+      }
+    };
+
+    // Create canvas for the character card
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = 512;
     canvas.height = 768;
 
     if (ctx) {
-      // Background
-      ctx.fillStyle = '#ffffff';
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#f8fafc');
+      gradient.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Border
-      ctx.strokeStyle = '#e5e7eb';
+      ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 2;
       ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-      // Character name
-      ctx.fillStyle = '#1f2937';
+      // Character name with background
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(20, 20, canvas.width - 40, 60);
+      ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 28px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(character.name, canvas.width / 2, 50);
+      ctx.fillText(character.name, canvas.width / 2, 60);
 
-      // Version and Creator
+      // Creator and version info
       ctx.font = '14px Arial';
-      ctx.fillStyle = '#6b7280';
-      ctx.fillText('v1.0 | @PlumaAI', canvas.width / 2, 75);
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(`v${character.character_version || '1.0'} | @${character.creator || 'PlumaAI'}`, canvas.width / 2, 100);
 
       // Card sections
       ctx.font = '16px Arial';
@@ -121,7 +198,7 @@ export default function CharacterCards() {
           const testWidth = metrics.width;
           
           if (testWidth > maxWidth && n > 0) {
-            ctx.fillText(line, 20, currentY);
+            ctx.fillText(line, 30, currentY);
             line = words[n] + ' ';
             currentY += lineHeight;
             lineCount++;
@@ -135,74 +212,140 @@ export default function CharacterCards() {
         return currentY + lineHeight;
       };
 
-      let y = 110;
+      let y = 130;
       
       // Description section
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = '#475569';
       ctx.font = 'bold 18px Arial';
       ctx.fillText('Description:', 30, y);
       y += 25;
       ctx.font = '16px Arial';
-      ctx.fillStyle = '#374151';
-      y = wrapText(character.description, y, 22, 3);
+      ctx.fillStyle = '#334155';
+      y = wrapText(character.description, y, 22, 4);
 
       y += 15;
       
-      // First Message section
-      ctx.fillStyle = '#6b7280';
+      // Personality section
+      ctx.fillStyle = '#475569';
       ctx.font = 'bold 18px Arial';
-      ctx.fillText('First Message:', 30, y);
+      ctx.fillText('Personality:', 30, y);
       y += 25;
       ctx.font = '16px Arial';
-      ctx.fillStyle = '#374151';
-      const firstMessage = `"Hello! I'm ${character.name}. ${character.description.split('.')[0]}."`;
-      y = wrapText(firstMessage, y, 22, 3);
-
-      y += 15;
-      
-      // Summary section
-      ctx.fillStyle = '#6b7280';
-      ctx.font = 'bold 18px Arial';
-      ctx.fillText('Summary:', 30, y);
-      y += 25;
-      ctx.font = '16px Arial';
-      ctx.fillStyle = '#374151';
-      y = wrapText(character.backstory.substring(0, 200) + '...', y, 22, 3);
+      ctx.fillStyle = '#334155';
+      y = wrapText(character.personality, y, 22, 3);
 
       y += 15;
       
       // Scenario section
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = '#475569';
       ctx.font = 'bold 18px Arial';
       ctx.fillText('Scenario:', 30, y);
       y += 25;
       ctx.font = '16px Arial';
-      ctx.fillStyle = '#374151';
-      const scenario = `You meet ${character.name} in their world. ${character.appearance}`;
-      y = wrapText(scenario, y, 22, 2);
+      ctx.fillStyle = '#334155';
+      y = wrapText(character.scenario, y, 22, 3);
 
       y += 15;
       
-      // Character Notes section
-      ctx.fillStyle = '#6b7280';
+      // First Message section
+      ctx.fillStyle = '#475569';
       ctx.font = 'bold 18px Arial';
-      ctx.fillText('Character Notes:', 30, y);
+      ctx.fillText('First Message:', 30, y);
       y += 25;
       ctx.font = '16px Arial';
-      ctx.fillStyle = '#374151';
-      y = wrapText(`Personality: ${character.personality}`, y, 22, 4);
+      ctx.fillStyle = '#334155';
+      y = wrapText(character.first_mes, y, 22, 4);
+
+      // Tags
+      if (character.tags && character.tags.length > 0) {
+        y += 15;
+        ctx.fillStyle = '#475569';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('Tags:', 30, y);
+        y += 20;
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText(character.tags.join(', '), 30, y);
+      }
 
       // Footer
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = '#94a3b8';
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Generated by PlumaAI', canvas.width / 2, canvas.height - 20);
+      ctx.fillText('Character Card v2.0 | Generated by PlumaAI', canvas.width / 2, canvas.height - 20);
 
-      // Download
-      const link = document.createElement('a');
-      link.download = `${character.name}-character-card.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+      // Convert to blob and add metadata
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          // Create a new PNG with embedded character data
+          const arrayBuffer = await blob.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          
+          // Convert character data to base64 encoded JSON
+          const jsonString = JSON.stringify(cardData);
+          const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
+          
+          // Create tEXt chunk with character data
+          const keyword = 'chara';
+          const textData = keyword + '\0' + base64Data;
+          const textBytes = new TextEncoder().encode(textData);
+          
+          // Calculate CRC32 for the chunk
+          const crc32 = (data: Uint8Array) => {
+            const table = new Uint32Array(256);
+            for (let i = 0; i < 256; i++) {
+              let c = i;
+              for (let j = 0; j < 8; j++) {
+                c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+              }
+              table[i] = c;
+            }
+            
+            let crc = 0xFFFFFFFF;
+            for (let i = 0; i < data.length; i++) {
+              crc = table[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+            }
+            return (crc ^ 0xFFFFFFFF) >>> 0;
+          };
+          
+          // Create the complete tEXt chunk
+          const chunkType = new TextEncoder().encode('tEXt');
+          const chunkLength = new Uint32Array([textBytes.length]);
+          const chunkCRC = new Uint32Array([crc32(new Uint8Array([...chunkType, ...textBytes]))]);
+          
+          // Convert to big-endian
+          const lengthBytes = new Uint8Array(chunkLength.buffer).reverse();
+          const crcBytes = new Uint8Array(chunkCRC.buffer).reverse();
+          
+          // Find IEND chunk position
+          let iendPos = uint8Array.length - 12; // IEND is typically at the end
+          for (let i = uint8Array.length - 20; i >= 0; i--) {
+            if (uint8Array[i] === 0x49 && uint8Array[i+1] === 0x45 && 
+                uint8Array[i+2] === 0x4E && uint8Array[i+3] === 0x44) {
+              iendPos = i - 4;
+              break;
+            }
+          }
+          
+          // Create new PNG with embedded data
+          const newPNG = new Uint8Array(uint8Array.length + 12 + textBytes.length);
+          newPNG.set(uint8Array.slice(0, iendPos), 0);
+          newPNG.set(lengthBytes, iendPos);
+          newPNG.set(chunkType, iendPos + 4);
+          newPNG.set(textBytes, iendPos + 8);
+          newPNG.set(crcBytes, iendPos + 8 + textBytes.length);
+          newPNG.set(uint8Array.slice(iendPos), iendPos + 12 + textBytes.length);
+          
+          // Download the file
+          const newBlob = new Blob([newPNG], { type: 'image/png' });
+          const url = URL.createObjectURL(newBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${character.name.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
     }
   };
 
@@ -217,162 +360,8 @@ export default function CharacterCards() {
     linkElement.click();
   };
 
-  const importCharacters = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/json') {
-        // Handle JSON files
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const importedCharacters = JSON.parse(e.target?.result as string);
-            setCharacters(prev => [...prev, ...importedCharacters]);
-          } catch (error) {
-            alert('Error importing JSON characters. Please check the file format.');
-          }
-        };
-        reader.readAsText(file);
-      } else if (file.type.startsWith('image/')) {
-        // Handle PNG character cards
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const img = new Image();
-            img.onload = () => {
-              // Create canvas to read image data
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              
-              if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                
-                // Try to extract text from image using OCR-like approach
-                // For now, we'll create a character based on filename and prompt user
-                const fileName = file.name.replace(/\.[^/.]+$/, "");
-                const character: Character = {
-                  id: Date.now().toString(),
-                  name: fileName || 'Imported Character',
-                  description: 'Character imported from PNG card. Please edit to add details.',
-                  appearance: 'Please add appearance details from the character card.',
-                  personality: 'Please add personality details from the character card.',
-                  backstory: 'Please add backstory details from the character card.',
-                  image: e.target?.result as string,
-                  createdAt: new Date().toISOString()
-                };
-                
-                setCharacters(prev => [...prev, character]);
-                alert(`Character "${character.name}" imported from PNG. Please edit to add the details from your character card.`);
-              }
-            };
-            img.src = e.target?.result as string;
-          } catch (error) {
-            alert('Error importing PNG character card. Please try again.');
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert('Please select a JSON file or PNG character card.');
-      }
-    }
-  };
-
-  // Add function to parse character card text format
-  const parseCharacterCardText = (text: string): Partial<Character> => {
-    const lines = text.split('\n');
-    const character: Partial<Character> = {};
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('Name:')) {
-        character.name = trimmed.replace('Name:', '').trim();
-      } else if (trimmed.startsWith('Description:')) {
-        character.description = trimmed.replace('Description:', '').trim();
-      } else if (trimmed.startsWith('Personality:')) {
-        character.personality = trimmed.replace('Personality:', '').trim();
-      } else if (trimmed.startsWith('Appearance:')) {
-        character.appearance = trimmed.replace('Appearance:', '').trim();
-      } else if (trimmed.startsWith('Backstory:') || trimmed.startsWith('Summary:')) {
-        character.backstory = trimmed.replace(/^(Backstory:|Summary:)/, '').trim();
-      }
-    }
-    
-    return character;
-  };
-
-  // Enhanced import with text parsing
-  const importCharacterWithTextParsing = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/json') {
-        // Handle JSON files
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const importedCharacters = JSON.parse(e.target?.result as string);
-            setCharacters(prev => [...prev, ...importedCharacters]);
-          } catch (error) {
-            alert('Error importing JSON characters. Please check the file format.');
-          }
-        };
-        reader.readAsText(file);
-      } else if (file.type.startsWith('image/')) {
-        // Handle PNG character cards with text extraction
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              
-              // Create character with image and prompt for manual entry
-              const fileName = file.name.replace(/\.[^/.]+$/, "");
-              
-              // Show modal for manual character data entry
-              const characterData = prompt(`Please enter character data for "${fileName}" in this format:
-Name: Character Name
-Description: Brief description
-Personality: Character personality
-Appearance: Physical appearance
-Backstory: Character background
-
-Paste the character card text here:`);
-              
-              if (characterData) {
-                const parsedData = parseCharacterCardText(characterData);
-                const character: Character = {
-                  id: Date.now().toString(),
-                  name: parsedData.name || fileName || 'Imported Character',
-                  description: parsedData.description || 'Please add description',
-                  appearance: parsedData.appearance || 'Please add appearance',
-                  personality: parsedData.personality || 'Please add personality',
-                  backstory: parsedData.backstory || 'Please add backstory',
-                  image: e.target?.result as string,
-                  createdAt: new Date().toISOString()
-                };
-                
-                setCharacters(prev => [...prev, character]);
-                alert(`Character "${character.name}" imported successfully!`);
-              }
-            }
-          };
-          img.src = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-      } else {
-        alert('Please select a JSON file or PNG character card.');
-      }
-    }
-  };
-
-  // Add advanced PNG parsing for embedded JSON
-  const parseEmbeddedCharacterData = async (file: File): Promise<Character | null> => {
+  // Parse character card from PNG with embedded data
+  const parseCharacterCardPNG = async (file: File): Promise<Character | null> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -380,7 +369,7 @@ Paste the character card text here:`);
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const uint8Array = new Uint8Array(arrayBuffer);
           
-          // Parse PNG chunks to find tEXt, zTXt, or iTXt chunks containing character data
+          // Parse PNG chunks to find tEXt chunks
           let offset = 8; // Skip PNG signature
           
           while (offset < uint8Array.length) {
@@ -394,73 +383,55 @@ Paste the character card text here:`);
                                            uint8Array[offset + 2], uint8Array[offset + 3]);
             offset += 4;
             
-            // Check for text chunks that might contain character data
-            if (type === 'tEXt' || type === 'zTXt' || type === 'iTXt') {
+            // Check for tEXt chunks
+            if (type === 'tEXt') {
               const chunkData = uint8Array.slice(offset, offset + length);
-              let text = '';
+              const text = new TextDecoder('latin1').decode(chunkData);
               
-              if (type === 'tEXt') {
-                // Plain text chunk
-                text = new TextDecoder('latin1').decode(chunkData);
-              } else if (type === 'iTXt') {
-                // International text chunk
-                text = new TextDecoder('utf-8').decode(chunkData);
-              }
-              
-              // Look for character data keywords
-              if (text.includes('chara') || text.includes('Character') || text.includes('Description')) {
-                // Try to parse as JSON first
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
+              // Look for character data
+              const nullIndex = text.indexOf('\0');
+              if (nullIndex !== -1) {
+                const keyword = text.substring(0, nullIndex);
+                const data = text.substring(nullIndex + 1);
+                
+                if (keyword === 'chara' || keyword === 'character') {
                   try {
-                    const characterData = JSON.parse(jsonMatch[0]);
+                    // Try to decode base64 data
+                    const decodedData = atob(data);
+                    const characterData = JSON.parse(decodedData);
+                    
+                    // Handle both V1 and V2 formats
+                    let charInfo;
+                    if (characterData.spec === 'chara_card_v2') {
+                      charInfo = characterData.data;
+                    } else {
+                      charInfo = characterData;
+                    }
+                    
                     const character: Character = {
                       id: Date.now().toString(),
-                      name: characterData.name || characterData.char_name || 'Imported Character',
-                      description: characterData.description || characterData.char_persona || characterData.personality || 'Imported character',
-                      appearance: characterData.appearance || characterData.char_appearance || characterData.looks || 'Please add appearance',
-                      personality: characterData.personality || characterData.char_personality || characterData.persona || 'Please add personality',
-                      backstory: characterData.backstory || characterData.char_backstory || characterData.background || characterData.scenario || 'Please add backstory',
+                      name: charInfo.name || 'Imported Character',
+                      description: charInfo.description || charInfo.char_persona || '',
+                      personality: charInfo.personality || charInfo.char_personality || '',
+                      scenario: charInfo.scenario || charInfo.world_scenario || '',
+                      first_mes: charInfo.first_mes || charInfo.char_greeting || '',
+                      mes_example: charInfo.mes_example || charInfo.example_dialogue || '',
+                      creator_notes: charInfo.creator_notes || '',
+                      system_prompt: charInfo.system_prompt || '',
+                      post_history_instructions: charInfo.post_history_instructions || '',
+                      alternate_greetings: charInfo.alternate_greetings || [],
+                      character_book: charInfo.character_book || null,
+                      tags: charInfo.tags || [],
+                      creator: charInfo.creator || 'Unknown',
+                      character_version: charInfo.character_version || '1.0',
                       createdAt: new Date().toISOString()
                     };
+                    
                     resolve(character);
                     return;
                   } catch (parseError) {
-                    // Continue to text parsing
+                    console.error('Error parsing character data:', parseError);
                   }
-                }
-                
-                // Try to parse as structured text
-                const lines = text.split('\n');
-                const character: Partial<Character> = {};
-                
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed.toLowerCase().includes('name:') || trimmed.toLowerCase().includes('character:')) {
-                    character.name = trimmed.split(':')[1]?.trim() || 'Imported Character';
-                  } else if (trimmed.toLowerCase().includes('description:') || trimmed.toLowerCase().includes('persona:')) {
-                    character.description = trimmed.split(':')[1]?.trim() || 'Imported character';
-                  } else if (trimmed.toLowerCase().includes('personality:')) {
-                    character.personality = trimmed.split(':')[1]?.trim() || 'Please add personality';
-                  } else if (trimmed.toLowerCase().includes('appearance:') || trimmed.toLowerCase().includes('looks:')) {
-                    character.appearance = trimmed.split(':')[1]?.trim() || 'Please add appearance';
-                  } else if (trimmed.toLowerCase().includes('backstory:') || trimmed.toLowerCase().includes('background:') || trimmed.toLowerCase().includes('scenario:')) {
-                    character.backstory = trimmed.split(':')[1]?.trim() || 'Please add backstory';
-                  }
-                }
-                
-                if (character.name) {
-                  const fullCharacter: Character = {
-                    id: Date.now().toString(),
-                    name: character.name,
-                    description: character.description || 'Imported character',
-                    appearance: character.appearance || 'Please add appearance',
-                    personality: character.personality || 'Please add personality',
-                    backstory: character.backstory || 'Please add backstory',
-                    createdAt: new Date().toISOString()
-                  };
-                  resolve(fullCharacter);
-                  return;
                 }
               }
             }
@@ -469,31 +440,9 @@ Paste the character card text here:`);
             offset += length + 4; // +4 for CRC
           }
           
-          // Fallback: try to decode entire file as text and look for patterns
-          const fullText = new TextDecoder('utf-8', { fatal: false }).decode(uint8Array);
-          const jsonMatch = fullText.match(/\{[\s\S]*?"name"[\s\S]*?\}/);
-          
-          if (jsonMatch) {
-            try {
-              const characterData = JSON.parse(jsonMatch[0]);
-              const character: Character = {
-                id: Date.now().toString(),
-                name: characterData.name || characterData.char_name || 'Imported Character',
-                description: characterData.description || characterData.char_persona || 'Imported character',
-                appearance: characterData.appearance || characterData.char_appearance || 'Please add appearance',
-                personality: characterData.personality || characterData.char_personality || 'Please add personality',
-                backstory: characterData.backstory || characterData.char_backstory || characterData.scenario || 'Please add backstory',
-                createdAt: new Date().toISOString()
-              };
-              resolve(character);
-              return;
-            } catch (parseError) {
-              // Continue to null
-            }
-          }
-          
           resolve(null);
         } catch (error) {
+          console.error('Error reading PNG:', error);
           resolve(null);
         }
       };
@@ -501,7 +450,6 @@ Paste the character card text here:`);
     });
   };
 
-  // Updated import function with better PNG support
   const handleImportCharacters = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -511,106 +459,58 @@ Paste the character card text here:`);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const importedCharacters = JSON.parse(e.target?.result as string);
-          if (Array.isArray(importedCharacters)) {
-            setCharacters(prev => [...prev, ...importedCharacters]);
+          const importedData = JSON.parse(e.target?.result as string);
+          let importedCharacters: Character[] = [];
+          
+          if (Array.isArray(importedData)) {
+            importedCharacters = importedData;
+          } else if (importedData.spec === 'chara_card_v2') {
+            // Handle V2 format
+            const charData = importedData.data;
+            importedCharacters = [{
+              id: Date.now().toString(),
+              name: charData.name,
+              description: charData.description,
+              personality: charData.personality,
+              scenario: charData.scenario,
+              first_mes: charData.first_mes,
+              mes_example: charData.mes_example,
+              creator_notes: charData.creator_notes || '',
+              tags: charData.tags || [],
+              creator: charData.creator || 'Unknown',
+              character_version: charData.character_version || '1.0',
+              createdAt: new Date().toISOString()
+            }];
           } else {
-            setCharacters(prev => [...prev, importedCharacters]);
+            // Handle single character or V1 format
+            importedCharacters = [importedData];
           }
-          alert('Characters imported successfully!');
+          
+          setCharacters(prev => [...prev, ...importedCharacters]);
+          alert(`Successfully imported ${importedCharacters.length} character(s)!`);
         } catch (error) {
-          alert('Error importing JSON characters. Please check the file format.');
+          alert('Error importing JSON file. Please check the file format.');
         }
       };
       reader.readAsText(file);
     } else if (file.type.startsWith('image/')) {
-      // Try to parse embedded character data first
-      const embeddedCharacter = await parseEmbeddedCharacterData(file);
+      // Handle PNG character cards
+      const character = await parseCharacterCardPNG(file);
       
-      if (embeddedCharacter) {
+      if (character) {
         // Add the image to the character
         const reader = new FileReader();
         reader.onload = (e) => {
-          embeddedCharacter.image = e.target?.result as string;
-          setCharacters(prev => [...prev, embeddedCharacter]);
-          alert(`Character "${embeddedCharacter.name}" imported from PNG with embedded data!`);
+          character.image = e.target?.result as string;
+          setCharacters(prev => [...prev, character]);
+          alert(`Character "${character.name}" imported successfully from PNG!`);
         };
         reader.readAsDataURL(file);
       } else {
-        // Fallback to manual entry with image preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const fileName = file.name.replace(/\.[^/.]+$/, "");
-          
-          // Show a more detailed prompt for character card data
-          const characterData = prompt(`No embedded character data found in PNG.
-Please paste the character information from your character card:
-
-Format example:
-Name: Character Name
-Description: Brief description
-Personality: Character traits
-Appearance: Physical description  
-Backstory: Character background
-
-Or just enter the character name to import with placeholder data:`);
-          
-          if (characterData) {
-            let character: Character;
-            
-            if (characterData.includes(':')) {
-              // Parse structured data
-              const parsedData = parseCharacterCardText(characterData);
-              character = {
-                id: Date.now().toString(),
-                name: parsedData.name || fileName || 'Imported Character',
-                description: parsedData.description || 'Please add description',
-                appearance: parsedData.appearance || 'Please add appearance',
-                personality: parsedData.personality || 'Please add personality',
-                backstory: parsedData.backstory || 'Please add backstory',
-                image: e.target?.result as string,
-                createdAt: new Date().toISOString()
-              };
-            } else {
-              // Simple name input
-              character = {
-                id: Date.now().toString(),
-                name: characterData || fileName,
-                description: 'Please add description from character card',
-                appearance: 'Please add appearance from character card',
-                personality: 'Please add personality from character card',
-                backstory: 'Please add backstory from character card',
-                image: e.target?.result as string,
-                createdAt: new Date().toISOString()
-              };
-            }
-            
-            setCharacters(prev => [...prev, character]);
-            alert(`Character "${character.name}" imported! Please edit to complete the details from your character card.`);
-          }
-        };
-        reader.readAsDataURL(file);
+        alert('No character data found in PNG file. Please ensure this is a valid character card PNG with embedded data.');
       }
     } else {
       alert('Please select a JSON file or PNG character card.');
-    }
-  };
-
-  // Add function to handle different PNG formats (Character.AI, Tavern, etc.)
-  const parseCharacterCardFormats = (text: string): Partial<Character> => {
-    // Try JSON format first
-    try {
-      const jsonData = JSON.parse(text);
-      return {
-        name: jsonData.name || jsonData.char_name || jsonData.character_name,
-        description: jsonData.description || jsonData.char_persona || jsonData.personality || jsonData.persona,
-        appearance: jsonData.appearance || jsonData.char_appearance || jsonData.looks,
-        personality: jsonData.personality || jsonData.char_personality || jsonData.traits,
-        backstory: jsonData.backstory || jsonData.char_backstory || jsonData.background || jsonData.scenario
-      };
-    } catch {
-      // Fall back to text parsing
-      return parseCharacterCardText(text);
     }
   };
 
@@ -622,7 +522,7 @@ Or just enter the character name to import with placeholder data:`);
             <h1 className="text-3xl font-bold text-gray-900">Character Cards</h1>
             <p className="text-gray-600 mt-2">Create and manage your story characters</p>
             <p className="text-sm text-gray-500 mt-1">
-              Supports JSON files and PNG character cards with embedded data
+              Compatible with Character.AI, Tavern AI, SillyTavern, and other platforms
             </p>
           </div>
           <div className="flex space-x-4">
@@ -653,86 +553,138 @@ Or just enter the character name to import with placeholder data:`);
           </div>
         </div>
 
-        {/* Import Instructions */}
+        {/* Format Information */}
         <div className="bg-blue-50 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-blue-900 mb-2">PNG Character Card Import</h3>
-          <p className="text-blue-800 text-sm">
-            Import PNG character cards from Character.AI, Tavern AI, or other platforms. 
-            The system will automatically detect and parse embedded character data from the PNG description/metadata.
-          </p>
+          <div className="flex items-start">
+            <Info className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">Character Card Format Support</h3>
+              <div className="text-blue-800 text-sm space-y-1">
+                <p>• <strong>PNG Import:</strong> Supports Character Card V2 format with embedded JSON data</p>
+                <p>• <strong>PNG Export:</strong> Creates standard character cards compatible with most AI chat platforms</p>
+                <p>• <strong>JSON Import/Export:</strong> Full data preservation for backup and sharing</p>
+                <p>• <strong>Fields:</strong> Name, Description, Personality, Scenario, First Message, Example Messages, Tags</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Character Form */}
         {showForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
                   {editingId ? 'Edit Character' : 'Create New Character'}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Character Name
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      required
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Character Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tags (comma separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.tags}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="fantasy, adventure, magic"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
+                      Description *
                     </label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Brief description of the character..."
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Appearance
-                    </label>
-                    <textarea
-                      value={formData.appearance}
-                      onChange={(e) => setFormData(prev => ({ ...prev, appearance: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Personality
+                      Personality *
                     </label>
                     <textarea
                       value={formData.personality}
                       onChange={(e) => setFormData(prev => ({ ...prev, personality: e.target.value }))}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Character traits, behavior, mannerisms..."
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Backstory
+                      Scenario *
                     </label>
                     <textarea
-                      value={formData.backstory}
-                      onChange={(e) => setFormData(prev => ({ ...prev, backstory: e.target.value }))}
+                      value={formData.scenario}
+                      onChange={(e) => setFormData(prev => ({ ...prev, scenario: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Setting, situation, or context for interactions..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Message *
+                    </label>
+                    <textarea
+                      value={formData.first_mes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, first_mes: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="The character's opening message or greeting..."
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Example Messages
+                    </label>
+                    <textarea
+                      value={formData.mes_example}
+                      onChange={(e) => setFormData(prev => ({ ...prev, mes_example: e.target.value }))}
                       rows={4}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      required
+                      placeholder="Example dialogue between {{user}} and {{char}}..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Creator Notes
+                    </label>
+                    <textarea
+                      value={formData.creator_notes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, creator_notes: e.target.value }))}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Additional notes about the character..."
                     />
                   </div>
 
@@ -758,9 +710,12 @@ Or just enter the character name to import with placeholder data:`);
                         setFormData({
                           name: '',
                           description: '',
-                          appearance: '',
                           personality: '',
-                          backstory: '',
+                          scenario: '',
+                          first_mes: '',
+                          mes_example: '',
+                          creator_notes: '',
+                          tags: '',
                           image: ''
                         });
                       }}
@@ -787,7 +742,10 @@ Or just enter the character name to import with placeholder data:`);
             <div key={character.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-gray-900">{character.name}</h3>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{character.name}</h3>
+                    <p className="text-sm text-gray-500">v{character.character_version} | @{character.creator}</p>
+                  </div>
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleEdit(character)}
@@ -798,6 +756,7 @@ Or just enter the character name to import with placeholder data:`);
                     <button
                       onClick={() => exportCharacter(character)}
                       className="text-green-600 hover:text-green-800"
+                      title="Export as PNG Character Card"
                     >
                       <Download className="h-4 w-4" />
                     </button>
@@ -821,18 +780,37 @@ Or just enter the character name to import with placeholder data:`);
                 <div className="space-y-3">
                   <div>
                     <h4 className="font-medium text-gray-900 mb-1">Description</h4>
-                    <p className="text-gray-600 text-sm">{character.description}</p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium text-gray-900 mb-1">Appearance</h4>
-                    <p className="text-gray-600 text-sm">{character.appearance}</p>
+                    <p className="text-gray-600 text-sm line-clamp-2">{character.description}</p>
                   </div>
 
                   <div>
                     <h4 className="font-medium text-gray-900 mb-1">Personality</h4>
-                    <p className="text-gray-600 text-sm">{character.personality}</p>
+                    <p className="text-gray-600 text-sm line-clamp-2">{character.personality}</p>
                   </div>
+
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-1">First Message</h4>
+                    <p className="text-gray-600 text-sm line-clamp-2">{character.first_mes}</p>
+                  </div>
+
+                  {character.tags && character.tags.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-1">Tags</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {character.tags.slice(0, 3).map((tag, index) => (
+                          <span
+                            key={index}
+                            className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {character.tags.length > 3 && (
+                          <span className="text-xs text-gray-500">+{character.tags.length - 3} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

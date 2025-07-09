@@ -223,16 +223,21 @@ export default function AIWriter() {
         prompt = `Genre: ${customGenre.name} (${customGenre.characteristics}). Style: ${settings.style}. Continue this text: ${inputText}`;
       }
 
-      // Simulate API call to Fearthless
-      const response = await fetch('https://api.fearthless.ai/v1/completions', {
+      // API call to Chutes
+      const response = await fetch('https://api.chutes.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer rc_5cb91e0e4d24e1ea147916248c5f401df4ad26208ac9a3f0af393a87e9af0f2c'
+          'Authorization': 'Bearer cpk_cfa7d8cde9394901845f0b6e62fdcfa6.0d6209d2d5f1578ba66d122c1d14d9a0.CXzSDxe2QuSFrzonuqjVhOruVY6mUKyK'
         },
         body: JSON.stringify({
-          model: currentPlan?.model.toLowerCase().replace(' ', '-') || 'cydonia-22b',
-          prompt: prompt,
+          model: 'cydonia',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
           max_tokens: settings.maxTokens,
           temperature: settings.temperature
         })
@@ -242,7 +247,9 @@ export default function AIWriter() {
           ok: true,
           json: () => Promise.resolve({
             choices: [{
-              text: generateMockPrediction(inputText, settings)
+              message: {
+                content: generateMockPrediction(inputText, settings)
+              }
             }]
           })
         };
@@ -250,7 +257,7 @@ export default function AIWriter() {
 
       if (response.ok) {
         const data = await response.json();
-        const predictedText = data.choices?.[0]?.text || generateMockPrediction(inputText, settings);
+        const predictedText = data.choices?.[0]?.message?.content || generateMockPrediction(inputText, settings);
         
         setPrediction(predictedText);
         

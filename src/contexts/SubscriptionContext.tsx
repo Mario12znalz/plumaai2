@@ -41,22 +41,22 @@ const subscriptionPlans: SubscriptionPlan[] = [
     features: ['600 messages/day', '8K context window', 'Basic support', 'All AI features']
   },
   {
-    id: 'standard',
-    name: 'Standard',
-    price: 18,
+    id: 'advanced',
+    name: 'Advanced',
+    price: 15,
     messages: 800,
     model: 'Cydonia 22B',
     context: '8K Context',
     features: ['800 messages/day', '8K context window', 'Priority support', 'All AI features', 'Advanced exports']
   },
   {
-    id: 'pro',
-    name: 'Pro',
-    price: 25,
-    messages: 1000,
+    id: 'premium',
+    name: 'Premium',
+    price: 30,
+    messages: 1500,
     model: 'Cydonia 22B',
     context: '16K Context',
-    features: ['1000 messages/day', '16K context window', 'Premium support', 'All AI features', 'Advanced exports', 'Custom models']
+    features: ['1500 messages/day', '16K context window', 'Premium support', 'All AI features', 'Advanced exports', 'Custom models']
   }
 ];
 

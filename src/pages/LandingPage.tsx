@@ -41,10 +41,15 @@ export default function LandingPage() {
       {/* Features Section */}
       <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Everything You Need to Create
-            </h2>
+          <div className="flex flex-col items-center text-center mb-16">
+            <div className="flex items-center mb-6">
+              <Feather className="h-12 w-12 text-purple-600 mr-4" />
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  Everything You Need to Create
+                </h2>
+              </div>
+            </div>
             <p className="text-xl text-gray-600">
               Comprehensive tools for every aspect of creative writing
             </p>
@@ -145,8 +150,8 @@ export default function LandingPage() {
                 </span>
               </div>
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Standard</h3>
-                <div className="text-3xl font-bold text-purple-600 mb-4">$18<span className="text-lg text-gray-500">/month</span></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Advanced</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-4">$15<span className="text-lg text-gray-500">/month</span></div>
                 <p className="text-gray-600 mb-6">For serious writers</p>
                 <ul className="space-y-2 text-sm text-gray-600 mb-8">
                   <li>• 800 messages per day</li>
@@ -163,11 +168,11 @@ export default function LandingPage() {
 
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Pro</h3>
-                <div className="text-3xl font-bold text-purple-600 mb-4">$25<span className="text-lg text-gray-500">/month</span></div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Premium</h3>
+                <div className="text-3xl font-bold text-purple-600 mb-4">$30<span className="text-lg text-gray-500">/month</span></div>
                 <p className="text-gray-600 mb-6">Maximum power</p>
                 <ul className="space-y-2 text-sm text-gray-600 mb-8">
-                  <li>• 1000 messages per day</li>
+                  <li>• 1500 messages per day</li>
                   <li>• Cydonia 22B model</li>
                   <li>• 16K context window</li>
                   <li>• Premium support</li>

@@ -28,14 +28,14 @@ export default function Subscription() {
   };
 
   const getPlanIcon = (planId: string) => {
-    if (planId === 'pro') return Crown;
-    if (planId === 'premium') return Zap;
+    if (planId === 'premium') return Crown;
+    if (planId === 'advanced') return Zap;
     return CreditCard;
   };
 
   const getPlanColor = (planId: string) => {
-    if (planId === 'pro') return 'from-yellow-500 to-orange-500';
-    if (planId === 'standard') return 'from-purple-500 to-blue-500';
+    if (planId === 'premium') return 'from-yellow-500 to-orange-500';
+    if (planId === 'advanced') return 'from-purple-500 to-blue-500';
     return 'from-gray-500 to-gray-600';
   };
 
@@ -77,7 +77,7 @@ export default function Subscription() {
           {plans.map((plan) => {
             const Icon = getPlanIcon(plan.id);
             const isCurrentPlan = currentPlan?.id === plan.id;
-            const isPremiumPlan = plan.id === 'standard';
+            const isPremiumPlan = plan.id === 'advanced';
             
             return (
               <div 
@@ -133,7 +133,7 @@ export default function Subscription() {
                         onClick={() => handleUpgrade(plan.id)}
                         disabled={isProcessing}
                         className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
-                          plan.id === 'standard'
+                          plan.id === 'advanced'
                             ? 'bg-purple-600 text-white hover:bg-purple-700'
                             : 'bg-gray-900 text-white hover:bg-gray-800'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -172,7 +172,7 @@ export default function Subscription() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">What's the difference between Cydonia and Anubis?</h3>
               <p className="text-gray-600 text-sm">
-                All plans use our powerful Cydonia 22B model. Higher tiers offer more daily messages and enhanced context windows for longer conversations.
+                All plans use the powerful Cydonia model. Higher tiers offer more daily messages and enhanced context windows for longer conversations.
               </p>
             </div>
             

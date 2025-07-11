@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import { User, LogOut, Settings, CreditCard, Feather } from 'lucide-react';
+import { User, LogOut, Settings, CreditCard, Feather, MessageSquare } from 'lucide-react';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -54,7 +54,7 @@ export default function Header() {
               {currentPlan?.name}
             </div>
             
-            <div className="relative group">
+            <div className="relative">
               <button className="flex items-center space-x-2 p-2 rounded-full hover:bg-purple-100 transition-colors">
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full" />
@@ -63,7 +63,7 @@ export default function Header() {
                 )}
               </button>
               
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-[9999] opacity-0 hover:opacity-100 transition-opacity pointer-events-none hover:pointer-events-auto">
                 <div className="px-4 py-2 border-b border-gray-200">
                   <p className="text-sm font-medium text-gray-900">{user.name}</p>
                   <p className="text-sm text-gray-500">{user.email}</p>
@@ -75,6 +75,10 @@ export default function Header() {
                 <Link to="/subscription" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-purple-50">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Subscription
+                </Link>
+                <Link to="/roleplay" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-purple-50">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Roleplay Chat
                 </Link>
                 <button
                   onClick={handleLogout}

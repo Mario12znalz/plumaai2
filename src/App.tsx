@@ -13,6 +13,7 @@ import AIWriter from './pages/AIWriter';
 import Facts from './pages/Facts';
 import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
+import RoleplayChat from './pages/RoleplayChat';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -39,6 +40,7 @@ function AppContent() {
         <Route path="/facts" element={user ? <Facts /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user ? <Subscription /> : <Navigate to="/login" />} />
+        <Route path="/roleplay" element={user ? <RoleplayChat /> : <Navigate to="/login" />} />
       </Routes>
     </div>
   );

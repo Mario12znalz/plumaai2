@@ -44,6 +44,9 @@ export default function Header() {
             <Link to="/facts" className="text-gray-700 hover:text-purple-600 transition-colors">
               Facts
             </Link>
+            <Link to="/library" className="text-gray-700 hover:text-purple-600 transition-colors">
+              Library
+            </Link>
           </nav>
 
           <div className="flex items-center space-x-4">

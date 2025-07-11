@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import { Users, BookOpen, PenTool, Brain, Database, TrendingUp, MessageCircle, Clock } from 'lucide-react';
+import { Users, BookOpen, PenTool, Brain, Database, TrendingUp, MessageCircle, Clock, Library } from 'lucide-react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -43,6 +43,13 @@ export default function Dashboard() {
       description: 'Store and organize research materials',
       link: '/facts',
       color: 'from-pink-500 to-pink-600'
+    },
+    {
+      name: 'Story Library',
+      icon: Library,
+      description: 'Organize and manage your creative writing',
+      link: '/library',
+      color: 'from-indigo-500 to-indigo-600'
     }
   ];
 
@@ -146,6 +153,13 @@ export default function Dashboard() {
             >
               <Brain className="h-8 w-8 text-orange-600 mb-2" />
               <p className="font-medium text-gray-900">AI Prediction</p>
+            </Link>
+            <Link
+              to="/library"
+              className="p-4 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+            >
+              <Library className="h-8 w-8 text-indigo-600 mb-2" />
+              <p className="font-medium text-gray-900">New Story</p>
             </Link>
           </div>
         </div>

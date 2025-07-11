@@ -16,6 +16,7 @@ interface WritingSettings {
   style: string;
   temperature: number;
   maxTokens: number;
+  minTokens: number;
   genre: string;
 }
 
@@ -46,11 +47,17 @@ export default function AIWriter() {
   const [showCustomGenreForm, setShowCustomGenreForm] = useState(false);
   const [editingStyle, setEditingStyle] = useState<string | null>(null);
   const [editingGenre, setEditingGenre] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'writing' | 'resources'>('writing');
+  const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
+  const [selectedLorebooks, setSelectedLorebooks] = useState<string[]>([]);
+  const [selectedPlotlines, setSelectedPlotlines] = useState<string[]>([]);
+  const [selectedFacts, setSelectedFacts] = useState<string[]>([]);
   
   const [settings, setSettings] = useState<WritingSettings>({
     style: 'creative',
     temperature: 0.7,
     maxTokens: 150,
+    minTokens: 50,
     genre: 'fantasy'
   });
 
@@ -68,6 +75,31 @@ export default function AIWriter() {
     description: '',
     characteristics: ''
   });
+
+  // Mock data for resources - in production, these would come from the actual pages
+  const [availableCharacters] = useState([
+    { id: '1', name: 'Luna', description: 'Mysterious mage with violet eyes' },
+    { id: '2', name: 'Marcus', description: 'Noble knight with unwavering loyalty' },
+    { id: '3', name: 'Aria', description: 'Skilled archer from the forest realm' }
+  ]);
+
+  const [availableLorebooks] = useState([
+    { id: '1', name: 'Magic System', description: 'Rules and mechanics of magic' },
+    { id: '2', name: 'World Geography', description: 'Locations and territories' },
+    { id: '3', name: 'Political Factions', description: 'Kingdoms and alliances' }
+  ]);
+
+  const [availablePlotlines] = useState([
+    { id: '1', name: 'The Ancient Prophecy', description: 'Main quest storyline' },
+    { id: '2', name: 'Romance Arc', description: 'Character relationship development' },
+    { id: '3', name: 'Political Intrigue', description: 'Court politics and schemes' }
+  ]);
+
+  const [availableFacts] = useState([
+    { id: '1', title: 'Dragon Lore', category: 'Mythology' },
+    { id: '2', title: 'Ancient Artifacts', category: 'Historical' },
+    { id: '3', title: 'Magic Crystals', category: 'Worldbuilding' }
+  ]);
 
   // Load custom styles and genres from localStorage
   useEffect(() => {
@@ -213,14 +245,43 @@ export default function AIWriter() {
       const customStyle = customStyles.find(s => s.id === settings.style);
       const customGenre = customGenres.find(g => g.name.toLowerCase() === settings.genre);
       
-      let prompt = `Genre: ${settings.genre}. Style: ${settings.style}. Continue this text naturally: ${inputText}`;
+      // Build context from selected resources
+      let contextPrompt = '';
+      
+      if (selectedCharacters.length > 0) {
+        const characters = availableCharacters.filter(c => selectedCharacters.includes(c.id));
+        contextPrompt += `\nCharacters involved: ${characters.map(c => `${c.name} (${c.description})`).join(', ')}`;
+      }
+      
+      if (selectedLorebooks.length > 0) {
+        const lorebooks = availableLorebooks.filter(l => selectedLorebooks.includes(l.id));
+        contextPrompt += `\nWorld context: ${lorebooks.map(l => `${l.name} - ${l.description}`).join(', ')}`;
+      }
+      
+      if (selectedPlotlines.length > 0) {
+        const plotlines = availablePlotlines.filter(p => selectedPlotlines.includes(p.id));
+        contextPrompt += `\nActive plotlines: ${plotlines.map(p => `${p.name} - ${p.description}`).join(', ')}`;
+      }
+      
+      if (selectedFacts.length > 0) {
+        const facts = availableFacts.filter(f => selectedFacts.includes(f.id));
+        contextPrompt += `\nRelevant facts: ${facts.map(f => `${f.title} (${f.category})`).join(', ')}`;
+      }
+      
+      let prompt = `Genre: ${settings.genre}. Style: ${settings.style}.${contextPrompt}
+      
+Continue this text naturally (${settings.minTokens}-${settings.maxTokens} tokens): ${inputText}`;
       
       if (customStyle) {
-        prompt = `${customStyle.prompt} Genre: ${settings.genre}. Continue this text: ${inputText}`;
+        prompt = `${customStyle.prompt} Genre: ${settings.genre}.${contextPrompt}
+        
+Continue this text (${settings.minTokens}-${settings.maxTokens} tokens): ${inputText}`;
       }
       
       if (customGenre) {
-        prompt = `Genre: ${customGenre.name} (${customGenre.characteristics}). Style: ${settings.style}. Continue this text: ${inputText}`;
+        prompt = `Genre: ${customGenre.name} (${customGenre.characteristics}). Style: ${settings.style}.${contextPrompt}
+        
+Continue this text (${settings.minTokens}-${settings.maxTokens} tokens): ${inputText}`;
       }
 
       // API call to Chutes
@@ -239,6 +300,7 @@ export default function AIWriter() {
             }
           ],
           max_tokens: settings.maxTokens,
+          min_tokens: settings.minTokens,
           temperature: settings.temperature
         })
       }).catch(() => {
@@ -548,18 +610,49 @@ export default function AIWriter() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Response Length
+                    Response Length (tokens)
                   </label>
-                  <select
-                    value={settings.maxTokens}
-                    onChange={(e) => setSettings(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-                  >
-                    <option value={50}>Short (50 tokens)</option>
-                    <option value={100}>Medium (100 tokens)</option>
-                    <option value={150}>Long (150 tokens)</option>
-                    <option value={200}>Very Long (200 tokens)</option>
-                  </select>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Minimum: {settings.minTokens}
+                      </label>
+                      <input
+                        type="range"
+                        min="25"
+                        max="500"
+                        step="25"
+                        value={settings.minTokens}
+                        onChange={(e) => setSettings(prev => ({ 
+                          ...prev, 
+                          minTokens: parseInt(e.target.value),
+                          maxTokens: Math.max(parseInt(e.target.value), prev.maxTokens)
+                        }))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Maximum: {settings.maxTokens}
+                      </label>
+                      <input
+                        type="range"
+                        min="50"
+                        max="1000"
+                        step="25"
+                        value={settings.maxTokens}
+                        onChange={(e) => setSettings(prev => ({ 
+                          ...prev, 
+                          maxTokens: parseInt(e.target.value),
+                          minTokens: Math.min(prev.minTokens, parseInt(e.target.value))
+                        }))}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 text-center">
+                      Range: {settings.minTokens} - {settings.maxTokens} tokens
+                    </div>
+                  </div>
                 </div>
 
                 <button
@@ -575,6 +668,35 @@ export default function AIWriter() {
 
           {/* Main Writing Area */}
           <div className="lg:col-span-3">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-xl shadow-lg mb-6">
+              <div className="border-b border-gray-200">
+                <nav className="flex space-x-8 px-6">
+                  <button
+                    onClick={() => setActiveTab('writing')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'writing'
+                        ? 'border-purple-500 text-purple-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Writing
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('resources')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'resources'
+                        ? 'border-purple-500 text-purple-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Resources
+                  </button>
+                </nav>
+              </div>
+            </div>
+
+            {activeTab === 'writing' && (
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               {/* Toolbar */}
               <div className="border-b border-gray-200 p-4">
@@ -699,6 +821,134 @@ export default function AIWriter() {
                 </div>
               </div>
             </div>
+            )}
+
+            {activeTab === 'resources' && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-6">Select Resources for AI Context</h2>
+                <p className="text-gray-600 mb-6">Choose characters, lorebooks, plotlines, and facts to include in the AI's context when generating text.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Characters */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Characters</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availableCharacters.map((character) => (
+                        <label key={character.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedCharacters.includes(character.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCharacters(prev => [...prev, character.id]);
+                              } else {
+                                setSelectedCharacters(prev => prev.filter(id => id !== character.id));
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{character.name}</div>
+                            <div className="text-sm text-gray-600">{character.description}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Lorebooks */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Lorebooks</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availableLorebooks.map((lorebook) => (
+                        <label key={lorebook.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedLorebooks.includes(lorebook.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedLorebooks(prev => [...prev, lorebook.id]);
+                              } else {
+                                setSelectedLorebooks(prev => prev.filter(id => id !== lorebook.id));
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{lorebook.name}</div>
+                            <div className="text-sm text-gray-600">{lorebook.description}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Plotlines */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Plotlines</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availablePlotlines.map((plotline) => (
+                        <label key={plotline.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlotlines.includes(plotline.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPlotlines(prev => [...prev, plotline.id]);
+                              } else {
+                                setSelectedPlotlines(prev => prev.filter(id => id !== plotline.id));
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{plotline.name}</div>
+                            <div className="text-sm text-gray-600">{plotline.description}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Facts */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Facts</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availableFacts.map((fact) => (
+                        <label key={fact.id} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedFacts.includes(fact.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedFacts(prev => [...prev, fact.id]);
+                              } else {
+                                setSelectedFacts(prev => prev.filter(id => id !== fact.id));
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{fact.title}</div>
+                            <div className="text-sm text-gray-600">{fact.category}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Resources Summary</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p>Characters: {selectedCharacters.length} selected</p>
+                    <p>Lorebooks: {selectedLorebooks.length} selected</p>
+                    <p>Plotlines: {selectedPlotlines.length} selected</p>
+                    <p>Facts: {selectedFacts.length} selected</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* History Panel */}
             {showHistory && (
